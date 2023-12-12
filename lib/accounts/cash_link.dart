@@ -114,47 +114,24 @@ class CashLink {
   }
 }
 
-extension ProgramAccountExt on dto.ProgramAccount {
-  dto.SplTokenAccountDataInfo? toPassBookAccountDataOrNull() {
-    final data = account.data;
-    if (data is dto.ParsedAccountData) {
-      return data.maybeMap(
-        orElse: () => null,
-        splToken: (data) => data.parsed.maybeMap(
-          orElse: () => null,
-          account: (data) {
-            final info = data.info;
-            final tokenAmount = info.tokenAmount;
-            final amount = int.parse(tokenAmount.amount);
-
-            if (tokenAmount.decimals != 0 || amount != 1) {
-              return null;
-            }
-
-            return info;
-          },
-        ),
-      );
-    } else {
-      return null;
-    }
-  }
-}
-
 extension CashLinkExtension on RpcClient {
-  Future<CashLinkAccount?> getCashLinkAccountByReference({
-    required Ed25519HDPublicKey reference,
-  }) async {
+  Future<CashLinkAccount?> getCashLinkAccountByReference(
+      {required Ed25519HDPublicKey reference,
+      Commitment commitment = Commitment.finalized}) async {
     final programAddress = await CashLink.pda(reference);
-    return getCashLinkAccount(address: programAddress);
+    return getCashLinkAccount(
+      address: programAddress,
+      commitment: commitment,
+    );
   }
 
-  Future<CashLinkAccount?> getCashLinkAccount({
-    required Ed25519HDPublicKey address,
-  }) async {
+  Future<CashLinkAccount?> getCashLinkAccount(
+      {required Ed25519HDPublicKey address,
+      Commitment commitment = Commitment.finalized}) async {
     final result = await getAccountInfo(
       address.toBase58(),
       encoding: dto.Encoding.base64,
+      commitment: commitment,
     );
     if (result.value?.data == null) {
       return null;
@@ -173,7 +150,9 @@ extension CashLinkExtension on RpcClient {
   }
 
   Future<List<CashLinkAccount>> findCashLinks(
-      {CashLinkState? state, String? authority}) async {
+      {CashLinkState? state,
+      String? authority,
+      Commitment commitment = Commitment.finalized}) async {
     final filters = [
       dto.ProgramDataFilter.memcmp(
           offset: 0, bytes: ByteArray.u8(AccountKey.cashLink.id).toList()),
@@ -187,6 +166,7 @@ extension CashLinkExtension on RpcClient {
       CashLinkProgram.programId,
       encoding: dto.Encoding.base64,
       filters: filters,
+      commitment: commitment,
     );
     return accounts
         .map(

@@ -65,21 +65,20 @@ class Redemption {
 }
 
 extension RedemptionExtension on RpcClient {
-  Future<RedemptionAccount?> getRedemptionAccountByCashLink({
-    required Ed25519HDPublicKey cashLinkPda,
-    required Ed25519HDPublicKey user,
-  }) async {
+  Future<RedemptionAccount?> getRedemptionAccountByCashLink(
+      {required Ed25519HDPublicKey cashLinkPda,
+      required Ed25519HDPublicKey user,
+      Commitment commitment = Commitment.finalized}) async {
     final programAddress = await Redemption.pda(cashLinkPda, user);
-    return getRedemptionAccount(address: programAddress);
+    return getRedemptionAccount(
+        address: programAddress, commitment: commitment);
   }
 
-  Future<RedemptionAccount?> getRedemptionAccount({
-    required Ed25519HDPublicKey address,
-  }) async {
-    final result = await getAccountInfo(
-      address.toBase58(),
-      encoding: dto.Encoding.base64,
-    );
+  Future<RedemptionAccount?> getRedemptionAccount(
+      {required Ed25519HDPublicKey address,
+      Commitment commitment = Commitment.finalized}) async {
+    final result = await getAccountInfo(address.toBase58(),
+        encoding: dto.Encoding.base64, commitment: commitment);
     if (result.value?.data == null) {
       return null;
     }
@@ -97,7 +96,9 @@ extension RedemptionExtension on RpcClient {
   }
 
   Future<List<RedemptionAccount>> findRedemptions(
-      {String? cashLink, String? user}) async {
+      {String? cashLink,
+      String? user,
+      Commitment commitment = Commitment.finalized}) async {
     final filters = [
       dto.ProgramDataFilter.memcmp(
           offset: 0, bytes: ByteArray.u8(AccountKey.redemption.id).toList()),
@@ -110,6 +111,7 @@ extension RedemptionExtension on RpcClient {
       CashLinkProgram.programId,
       encoding: dto.Encoding.base64,
       filters: filters,
+      commitment: commitment,
     );
     return accounts
         .map(
@@ -123,7 +125,8 @@ extension RedemptionExtension on RpcClient {
   }
 
   Future<List<RedemptionAccount>> findRedemptionsForCashLink(String cashLink,
-      {String? user}) async {
-    return findRedemptions(cashLink: cashLink, user: user);
+      {String? user, Commitment commitment = Commitment.finalized}) async {
+    return findRedemptions(
+        cashLink: cashLink, user: user, commitment: commitment);
   }
 }
