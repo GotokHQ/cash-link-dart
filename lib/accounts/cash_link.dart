@@ -33,8 +33,9 @@ class CashLink {
     required this.mint,
     this.lastRedeemedAt,
     this.canceledAt,
-    this.totalRedemptions,
-    this.maxNumRedemptions,
+    required this.totalRedemptions,
+    required this.maxNumRedemptions,
+    required this.minAmount,
   });
 
   factory CashLink.fromBinary(List<int> sourceBytes) {
@@ -84,6 +85,7 @@ class CashLink {
       mint: mint,
       totalRedemptions: totalRedemptions,
       maxNumRedemptions: maxNumRedemptions,
+      minAmount: decodeBigInt(reader.nextBytes(8), Endian.little),
     );
   }
 
@@ -102,8 +104,9 @@ class CashLink {
   final DateTime? lastRedeemedAt;
   final DateTime? canceledAt;
   final String? mint;
-  final BigInt? totalRedemptions;
-  final BigInt? maxNumRedemptions;
+  final BigInt totalRedemptions;
+  final BigInt maxNumRedemptions;
+  final BigInt minAmount;
 
   static Future<Ed25519HDPublicKey> pda(Ed25519HDPublicKey reference) {
     final programID = Ed25519HDPublicKey.fromBase58(CashLinkProgram.programId);
