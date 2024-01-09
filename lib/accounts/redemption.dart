@@ -22,7 +22,7 @@ class Redemption {
   const Redemption({
     required this.key,
     required this.cashLink,
-    required this.user,
+    required this.wallet,
     required this.redeemedAt,
     required this.amount,
   });
@@ -33,7 +33,7 @@ class Redemption {
     final bytes = Int8List.fromList(sourceBytes);
     final reader = StructReader(bytes.buffer)..skip(1);
     final cashLink = base58encode(reader.nextBytes(32));
-    final user = base58encode(reader.nextBytes(32));
+    final wallet = base58encode(reader.nextBytes(32));
     final redeemedAt = DateTime.fromMillisecondsSinceEpoch(
         (decodeBigInt(reader.nextBytes(8), Endian.little) * BigInt.from(1000))
             .toInt());
@@ -41,7 +41,7 @@ class Redemption {
     return Redemption(
       key: AccountKey.redemption,
       cashLink: cashLink,
-      user: user,
+      wallet: wallet,
       redeemedAt: redeemedAt,
       amount: amount,
     );
@@ -49,27 +49,30 @@ class Redemption {
 
   final AccountKey key;
   final String cashLink;
-  final String user;
+  final String wallet;
   final DateTime redeemedAt;
   final BigInt amount;
 
   static Future<Ed25519HDPublicKey> pda(
-      Ed25519HDPublicKey cashLink, Ed25519HDPublicKey user) {
+      Ed25519HDPublicKey cashLink, String reference) {
     final programID = Ed25519HDPublicKey.fromBase58(CashLinkProgram.programId);
-    return Ed25519HDPublicKey.findProgramAddress(seeds: [
-      Redemption.prefix.codeUnits,
-      cashLink.bytes,
-      user.bytes,
-    ], programId: programID);
+    return Ed25519HDPublicKey.findProgramAddress(
+      seeds: [
+        Redemption.prefix.codeUnits,
+        cashLink.bytes,
+        reference.codeUnits,
+      ],
+      programId: programID,
+    );
   }
 }
 
 extension RedemptionExtension on RpcClient {
   Future<RedemptionAccount?> getRedemptionAccountByCashLink(
       {required Ed25519HDPublicKey cashLinkPda,
-      required Ed25519HDPublicKey user,
+      required String reference,
       Commitment commitment = Commitment.finalized}) async {
-    final programAddress = await Redemption.pda(cashLinkPda, user);
+    final programAddress = await Redemption.pda(cashLinkPda, reference);
     return getRedemptionAccount(
         address: programAddress, commitment: commitment);
   }
@@ -97,15 +100,15 @@ extension RedemptionExtension on RpcClient {
 
   Future<List<RedemptionAccount>> findRedemptions(
       {String? cashLink,
-      String? user,
+      String? wallet,
       Commitment commitment = Commitment.finalized}) async {
     final filters = [
       dto.ProgramDataFilter.memcmp(
           offset: 0, bytes: ByteArray.u8(AccountKey.redemption.id).toList()),
       if (cashLink != null)
         dto.ProgramDataFilter.memcmpBase58(offset: 1, bytes: cashLink),
-      if (user != null)
-        dto.ProgramDataFilter.memcmpBase58(offset: 33, bytes: user),
+      if (wallet != null)
+        dto.ProgramDataFilter.memcmpBase58(offset: 33, bytes: wallet),
     ];
     final accounts = await getProgramAccounts(
       CashLinkProgram.programId,
@@ -125,8 +128,8 @@ extension RedemptionExtension on RpcClient {
   }
 
   Future<List<RedemptionAccount>> findRedemptionsForCashLink(String cashLink,
-      {String? user, Commitment commitment = Commitment.finalized}) async {
+      {String? wallet, Commitment commitment = Commitment.finalized}) async {
     return findRedemptions(
-        cashLink: cashLink, user: user, commitment: commitment);
+        cashLink: cashLink, wallet: wallet, commitment: commitment);
   }
 }
