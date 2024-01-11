@@ -60,7 +60,7 @@ class Redemption {
       seeds: [
         Redemption.prefix.codeUnits,
         cashLink.bytes,
-        reference.codeUnits,
+        base58decode(reference),
       ],
       programId: programID,
     );
