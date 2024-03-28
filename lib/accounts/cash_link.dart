@@ -32,10 +32,11 @@ class CashLink {
     required this.authority,
     required this.mint,
     this.lastRedeemedAt,
-    this.canceledAt,
+    this.expiresAt,
     required this.totalRedemptions,
     required this.maxNumRedemptions,
     required this.minAmount,
+    required this.fingerprintEnabled,
   });
 
   factory CashLink.fromBinary(List<int> sourceBytes) {
@@ -54,7 +55,7 @@ class CashLink {
     final lastRedeemedAt = reader.nextBytes(1).first == 1
         ? decodeBigInt(reader.nextBytes(8), Endian.little)
         : null;
-    final canceledAt = reader.nextBytes(1).first == 1
+    final expiresAt = reader.nextBytes(1).first == 1
         ? decodeBigInt(reader.nextBytes(8), Endian.little)
         : null;
     final mint = reader.nextBytes(1).first == 1
@@ -78,14 +79,15 @@ class CashLink {
           ? DateTime.fromMillisecondsSinceEpoch(
               (lastRedeemedAt * BigInt.from(1000)).toInt())
           : null,
-      canceledAt: canceledAt != null
+      expiresAt: expiresAt != null
           ? DateTime.fromMillisecondsSinceEpoch(
-              (canceledAt * BigInt.from(1000)).toInt())
+              (expiresAt * BigInt.from(1000)).toInt())
           : null,
       mint: mint,
       totalRedemptions: totalRedemptions,
       maxNumRedemptions: maxNumRedemptions,
       minAmount: decodeBigInt(reader.nextBytes(8), Endian.little),
+      fingerprintEnabled: reader.nextBytes(1).first == 1,
     );
   }
 
@@ -102,11 +104,12 @@ class CashLink {
   final CashLinkDistributionType distributionType;
   final String sender;
   final DateTime? lastRedeemedAt;
-  final DateTime? canceledAt;
+  final DateTime? expiresAt;
   final String? mint;
   final BigInt totalRedemptions;
   final BigInt maxNumRedemptions;
   final BigInt minAmount;
+  final bool fingerprintEnabled;
 
   static Future<Ed25519HDPublicKey> pda(Ed25519HDPublicKey reference) {
     final programID = Ed25519HDPublicKey.fromBase58(CashLinkProgram.programId);

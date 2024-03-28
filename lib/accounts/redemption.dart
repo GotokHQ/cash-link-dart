@@ -54,13 +54,13 @@ class Redemption {
   final BigInt amount;
 
   static Future<Ed25519HDPublicKey> pda(
-      Ed25519HDPublicKey cashLink, String reference) {
+      Ed25519HDPublicKey cashLink, Ed25519HDPublicKey wallet) {
     final programID = Ed25519HDPublicKey.fromBase58(CashLinkProgram.programId);
     return Ed25519HDPublicKey.findProgramAddress(
       seeds: [
         Redemption.prefix.codeUnits,
         cashLink.bytes,
-        base58decode(reference),
+        wallet.bytes,
       ],
       programId: programID,
     );
@@ -70,9 +70,9 @@ class Redemption {
 extension RedemptionExtension on RpcClient {
   Future<RedemptionAccount?> getRedemptionAccountByCashLink(
       {required Ed25519HDPublicKey cashLinkPda,
-      required String reference,
+      required Ed25519HDPublicKey wallet,
       Commitment commitment = Commitment.finalized}) async {
-    final programAddress = await Redemption.pda(cashLinkPda, reference);
+    final programAddress = await Redemption.pda(cashLinkPda, wallet);
     return getRedemptionAccount(
         address: programAddress, commitment: commitment);
   }

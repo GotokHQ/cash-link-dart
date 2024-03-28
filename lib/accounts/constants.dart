@@ -30,7 +30,6 @@ extension AccountKeyExtension on AccountKey {
 }
 
 enum CashLinkState {
-  uninitialized,
   initialized,
   redeemed,
   redeeming,
@@ -41,14 +40,12 @@ extension CashLinkStateExtension on CashLinkState {
   static CashLinkState fromId(int id) {
     switch (id) {
       case 0:
-        return CashLinkState.uninitialized;
-      case 1:
         return CashLinkState.initialized;
-      case 2:
+      case 1:
         return CashLinkState.redeemed;
-      case 3:
+      case 2:
         return CashLinkState.redeeming;
-      case 4:
+      case 3:
         return CashLinkState.canceled;
     }
     throw StateError('Invalid cash link state');
@@ -56,16 +53,14 @@ extension CashLinkStateExtension on CashLinkState {
 
   int get id {
     switch (this) {
-      case CashLinkState.uninitialized:
-        return 0;
       case CashLinkState.initialized:
-        return 1;
+        return 0;
       case CashLinkState.redeemed:
-        return 2;
+        return 1;
       case CashLinkState.redeeming:
-        return 3;
+        return 2;
       case CashLinkState.canceled:
-        return 4;
+        return 3;
     }
   }
 }
