@@ -111,18 +111,18 @@ class CashLink {
   final BigInt minAmount;
   final bool fingerprintEnabled;
 
-  static Future<Ed25519HDPublicKey> pda(Ed25519HDPublicKey reference) {
+  static Future<Ed25519HDPublicKey> pda(String reference) {
     final programID = Ed25519HDPublicKey.fromBase58(CashLinkProgram.programId);
     return Ed25519HDPublicKey.findProgramAddress(seeds: [
       CashLink.prefix.codeUnits,
-      reference.bytes,
+      base58decode(reference),
     ], programId: programID);
   }
 }
 
 extension CashLinkExtension on RpcClient {
   Future<CashLinkAccount?> getCashLinkAccountByReference(
-      {required Ed25519HDPublicKey reference,
+      {required String reference,
       Commitment commitment = Commitment.finalized}) async {
     final programAddress = await CashLink.pda(reference);
     return getCashLinkAccount(
