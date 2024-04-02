@@ -30,6 +30,7 @@ class CashLink {
     required this.distributionType,
     required this.sender,
     required this.authority,
+    required this.passKey,
     required this.mint,
     this.lastRedeemedAt,
     this.expiresAt,
@@ -88,6 +89,7 @@ class CashLink {
       maxNumRedemptions: maxNumRedemptions,
       minAmount: decodeBigInt(reader.nextBytes(8), Endian.little),
       fingerprintEnabled: reader.nextBytes(1).first == 1,
+      passKey: base58encode(reader.nextBytes(32)),
     );
   }
 
@@ -95,6 +97,7 @@ class CashLink {
 
   final AccountKey key;
   final String authority;
+  final String passKey;
   final CashLinkState state;
   final BigInt amount;
   final BigInt feeBps;
@@ -111,20 +114,20 @@ class CashLink {
   final BigInt minAmount;
   final bool fingerprintEnabled;
 
-  static Future<Ed25519HDPublicKey> pda(String reference) {
+  static Future<Ed25519HDPublicKey> pda(Ed25519HDPublicKey passKey) {
     final programID = Ed25519HDPublicKey.fromBase58(CashLinkProgram.programId);
     return Ed25519HDPublicKey.findProgramAddress(seeds: [
       CashLink.prefix.codeUnits,
-      base58decode(reference),
+      passKey.bytes,
     ], programId: programID);
   }
 }
 
 extension CashLinkExtension on RpcClient {
   Future<CashLinkAccount?> getCashLinkAccountByReference(
-      {required String reference,
+      {required Ed25519HDPublicKey passKey,
       Commitment commitment = Commitment.finalized}) async {
-    final programAddress = await CashLink.pda(reference);
+    final programAddress = await CashLink.pda(passKey);
     return getCashLinkAccount(
       address: programAddress,
       commitment: commitment,
