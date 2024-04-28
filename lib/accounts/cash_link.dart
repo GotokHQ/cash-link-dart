@@ -33,7 +33,6 @@ class CashLink {
     required this.authority,
     required this.passKey,
     required this.mint,
-    this.lastRedeemedAt,
     this.expiresAt,
     required this.totalRedemptions,
     required this.maxNumRedemptions,
@@ -55,9 +54,6 @@ class CashLink {
     final distributionType =
         CashLinkDistributionTypeExtension.fromId(reader.nextBytes(1).first);
     final sender = base58encode(reader.nextBytes(32));
-    final lastRedeemedAt = reader.nextBytes(1).first == 1
-        ? decodeBigInt(reader.nextBytes(8), Endian.little)
-        : null;
     final expiresAt = reader.nextBytes(1).first == 1
         ? decodeBigInt(reader.nextBytes(8), Endian.little)
         : null;
@@ -79,10 +75,6 @@ class CashLink {
       remainingAmount: remainingAmount,
       distributionType: distributionType,
       sender: sender,
-      lastRedeemedAt: lastRedeemedAt != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              (lastRedeemedAt * BigInt.from(1000)).toInt())
-          : null,
       expiresAt: expiresAt != null
           ? DateTime.fromMillisecondsSinceEpoch(
               (expiresAt * BigInt.from(1000)).toInt())
@@ -110,7 +102,6 @@ class CashLink {
   final BigInt remainingAmount;
   final CashLinkDistributionType distributionType;
   final String sender;
-  final DateTime? lastRedeemedAt;
   final DateTime? expiresAt;
   final String? mint;
   final BigInt totalRedemptions;
