@@ -4,8 +4,10 @@ import 'package:cash_link/accounts/constants.dart';
 import 'package:cash_link/cash_link_program.dart';
 import 'package:cash_link/utils/endian.dart';
 import 'package:cash_link/utils/struct_reader.dart';
+import 'package:solana/base58.dart';
 import 'package:solana/solana.dart';
 import 'package:solana/dto.dart' as dto;
+import 'package:solana/encoder.dart';
 
 class RedemptionAccount {
   const RedemptionAccount({
@@ -19,6 +21,8 @@ class RedemptionAccount {
 class Redemption {
   const Redemption({
     required this.key,
+    required this.cashLink,
+    required this.wallet,
     required this.redeemedAt,
     required this.amount,
   });
@@ -28,20 +32,24 @@ class Redemption {
   factory Redemption.fromBinary(List<int> sourceBytes) {
     final bytes = Int8List.fromList(sourceBytes);
     final reader = StructReader(bytes.buffer)..skip(1);
-    // final cashLink = base58encode(reader.nextBytes(32));
-    // final wallet = base58encode(reader.nextBytes(32));
+    final cashLink = base58encode(reader.nextBytes(32));
+    final wallet = base58encode(reader.nextBytes(32));
     final redeemedAt = DateTime.fromMillisecondsSinceEpoch(
         (decodeBigInt(reader.nextBytes(8), Endian.little) * BigInt.from(1000))
             .toInt());
     final amount = decodeBigInt(reader.nextBytes(8), Endian.little);
     return Redemption(
       key: AccountKey.redemption,
+      cashLink: cashLink,
+      wallet: wallet,
       redeemedAt: redeemedAt,
       amount: amount,
     );
   }
 
   final AccountKey key;
+  final String cashLink;
+  final String wallet;
   final DateTime redeemedAt;
   final BigInt amount;
 
@@ -90,36 +98,38 @@ extension RedemptionExtension on RpcClient {
     }
   }
 
-  // Future<List<RedemptionAccount>> findRedemptions(
-  //     {Commitment commitment = Commitment.finalized}) async {
-  //   final filters = [
-  //     dto.ProgramDataFilter.memcmp(
-  //         offset: 0, bytes: ByteArray.u8(AccountKey.redemption.id).toList()),
-  //     // if (cashLink != null)
-  //     //   dto.ProgramDataFilter.memcmpBase58(offset: 1, bytes: cashLink),
-  //     // if (wallet != null)
-  //     //   dto.ProgramDataFilter.memcmpBase58(offset: 33, bytes: wallet),
-  //   ];
-  //   final accounts = await getProgramAccounts(
-  //     CashLinkProgram.programId,
-  //     encoding: dto.Encoding.base64,
-  //     filters: filters,
-  //     commitment: commitment,
-  //   );
-  //   return accounts
-  //       .map(
-  //         (acc) => RedemptionAccount(
-  //           address: acc.pubkey,
-  //           redemption: Redemption.fromBinary(
-  //               (acc.account.data as dto.BinaryAccountData).data),
-  //         ),
-  //       )
-  //       .toList();
-  // }
+  Future<List<RedemptionAccount>> findRedemptions(
+      {String? cashLink,
+      String? wallet,
+      Commitment commitment = Commitment.finalized}) async {
+    final filters = [
+      dto.ProgramDataFilter.memcmp(
+          offset: 0, bytes: ByteArray.u8(AccountKey.redemption.id).toList()),
+      if (cashLink != null)
+        dto.ProgramDataFilter.memcmpBase58(offset: 1, bytes: cashLink),
+      if (wallet != null)
+        dto.ProgramDataFilter.memcmpBase58(offset: 33, bytes: wallet),
+    ];
+    final accounts = await getProgramAccounts(
+      CashLinkProgram.programId,
+      encoding: dto.Encoding.base64,
+      filters: filters,
+      commitment: commitment,
+    );
+    return accounts
+        .map(
+          (acc) => RedemptionAccount(
+            address: acc.pubkey,
+            redemption: Redemption.fromBinary(
+                (acc.account.data as dto.BinaryAccountData).data),
+          ),
+        )
+        .toList();
+  }
 
-  // Future<List<RedemptionAccount>> findRedemptionsForCashLink(String cashLink,
-  //     {String? wallet, Commitment commitment = Commitment.finalized}) async {
-  //   return findRedemptions(
-  //       cashLink: cashLink, wallet: wallet, commitment: commitment);
-  // }
+  Future<List<RedemptionAccount>> findRedemptionsForCashLink(String cashLink,
+      {String? wallet, Commitment commitment = Commitment.finalized}) async {
+    return findRedemptions(
+        cashLink: cashLink, wallet: wallet, commitment: commitment);
+  }
 }
