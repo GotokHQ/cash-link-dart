@@ -25,7 +25,8 @@ class CashLink {
     required this.amount,
     required this.feeBps,
     required this.fixedFee,
-    required this.feeToRedeem,
+    required this.baseFeeToRedeem,
+    required this.rentFeeToRedeem,
     required this.remainingAmount,
     required this.distributionType,
     required this.sender,
@@ -48,7 +49,8 @@ class CashLink {
     final amount = decodeBigInt(reader.nextBytes(8), Endian.little);
     final feeBps = decodeBigInt(reader.nextBytes(2), Endian.little);
     final fixedFee = decodeBigInt(reader.nextBytes(8), Endian.little);
-    final feeToRedeem = decodeBigInt(reader.nextBytes(8), Endian.little);
+    final baseFeeToRedeem = decodeBigInt(reader.nextBytes(8), Endian.little);
+    final rentFeeToRedeem = decodeBigInt(reader.nextBytes(8), Endian.little);
     final remainingAmount = decodeBigInt(reader.nextBytes(8), Endian.little);
     final distributionType =
         CashLinkDistributionTypeExtension.fromId(reader.nextBytes(1).first);
@@ -72,7 +74,8 @@ class CashLink {
       amount: amount,
       feeBps: feeBps,
       fixedFee: fixedFee,
-      feeToRedeem: feeToRedeem,
+      baseFeeToRedeem: baseFeeToRedeem,
+      rentFeeToRedeem: rentFeeToRedeem,
       remainingAmount: remainingAmount,
       distributionType: distributionType,
       sender: sender,
@@ -102,7 +105,8 @@ class CashLink {
   final BigInt amount;
   final BigInt feeBps;
   final BigInt fixedFee;
-  final BigInt feeToRedeem;
+  final BigInt baseFeeToRedeem;
+  final BigInt rentFeeToRedeem;
   final BigInt remainingAmount;
   final CashLinkDistributionType distributionType;
   final String sender;
