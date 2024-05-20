@@ -57,9 +57,7 @@ class CashLink {
     final expiresAt = reader.nextBytes(1).first == 1
         ? decodeBigInt(reader.nextBytes(8), Endian.little)
         : null;
-    final mint = reader.nextBytes(1).first == 1
-        ? base58encode(reader.nextBytes(32))
-        : null;
+    final mint = base58encode(reader.nextBytes(32));
 
     final totalRedemptions = decodeBigInt(reader.nextBytes(2), Endian.little);
     final maxNumRedemptions = decodeBigInt(reader.nextBytes(2), Endian.little);
@@ -103,7 +101,7 @@ class CashLink {
   final CashLinkDistributionType distributionType;
   final String sender;
   final DateTime? expiresAt;
-  final String? mint;
+  final String mint;
   final BigInt totalRedemptions;
   final BigInt maxNumRedemptions;
   final BigInt minAmount;
