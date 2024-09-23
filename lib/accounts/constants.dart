@@ -1,7 +1,6 @@
 enum AccountKey {
   uninitialized,
-  cashLink,
-  redemption,
+  cash,
 }
 
 extension AccountKeyExtension on AccountKey {
@@ -10,9 +9,7 @@ extension AccountKeyExtension on AccountKey {
       case 0:
         return AccountKey.uninitialized;
       case 1:
-        return AccountKey.cashLink;
-      case 2:
-        return AccountKey.redemption;
+        return AccountKey.cash;
     }
     throw StateError('Invalid account key');
   }
@@ -21,54 +18,49 @@ extension AccountKeyExtension on AccountKey {
     switch (this) {
       case AccountKey.uninitialized:
         return 0;
-      case AccountKey.cashLink:
+      case AccountKey.cash:
         return 1;
-      case AccountKey.redemption:
-        return 2;
     }
   }
 }
 
-enum CashLinkState {
+enum CashState {
   initialized,
   redeemed,
   redeeming,
   canceled,
 }
 
-extension CashLinkStateExtension on CashLinkState {
-  static CashLinkState fromId(int id) {
+extension CashStateExtension on CashState {
+  static CashState fromId(int id) {
     switch (id) {
       case 0:
-        return CashLinkState.initialized;
+        return CashState.initialized;
       case 1:
-        return CashLinkState.redeemed;
+        return CashState.redeemed;
       case 2:
-        return CashLinkState.redeeming;
+        return CashState.redeeming;
       case 3:
-        return CashLinkState.canceled;
+        return CashState.canceled;
     }
     throw StateError('Invalid cash link state');
   }
 
   int get id {
     switch (this) {
-      case CashLinkState.initialized:
+      case CashState.initialized:
         return 0;
-      case CashLinkState.redeemed:
+      case CashState.redeemed:
         return 1;
-      case CashLinkState.redeeming:
+      case CashState.redeeming:
         return 2;
-      case CashLinkState.canceled:
+      case CashState.canceled:
         return 3;
     }
   }
 }
 
-enum CashLinkDistributionType {
-  fixed,
-  random,
-}
+enum CashLinkDistributionType { fixed, random, weighted }
 
 extension CashLinkDistributionTypeExtension on CashLinkDistributionType {
   static CashLinkDistributionType fromId(int id) {
@@ -77,6 +69,8 @@ extension CashLinkDistributionTypeExtension on CashLinkDistributionType {
         return CashLinkDistributionType.fixed;
       case 1:
         return CashLinkDistributionType.random;
+      case 2:
+        return CashLinkDistributionType.weighted;
     }
     throw StateError('Invalid cash link distribution type');
   }
@@ -87,6 +81,8 @@ extension CashLinkDistributionTypeExtension on CashLinkDistributionType {
         return 0;
       case CashLinkDistributionType.random:
         return 1;
+      case CashLinkDistributionType.weighted:
+        return 2;
     }
   }
 }

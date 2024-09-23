@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:cash_link/accounts/constants.dart';
-import 'package:cash_link/cash_link_program.dart';
+import 'package:cash_link/cash_program.dart';
 import 'package:cash_link/utils/endian.dart';
 import 'package:cash_link/utils/struct_reader.dart';
 import 'package:solana/base58.dart';
@@ -9,17 +9,17 @@ import 'package:solana/dto.dart' as dto;
 import 'package:solana/encoder.dart';
 import 'package:solana/solana.dart';
 
-class CashLinkAccount {
-  const CashLinkAccount({
+class CashAccount {
+  const CashAccount({
     required this.address,
-    required this.cashLink,
+    required this.cash,
   });
   final String address;
-  final CashLink cashLink;
+  final Cash cash;
 }
 
-class CashLink {
-  const CashLink({
+class Cash {
+  const Cash({
     required this.key,
     required this.state,
     required this.amount,
@@ -29,22 +29,22 @@ class CashLink {
     required this.rentFeeToRedeem,
     required this.remainingAmount,
     required this.distributionType,
-    required this.sender,
+    required this.owner,
     required this.authority,
-    required this.passKey,
+    this.passKey,
     required this.mint,
-    this.expiresAt,
     required this.totalRedemptions,
     required this.maxNumRedemptions,
     required this.minAmount,
     required this.fingerprintEnabled,
+    required this.totalWeightPpm,
   });
 
-  factory CashLink.fromBinary(List<int> sourceBytes) {
+  factory Cash.fromBinary(List<int> sourceBytes) {
     final bytes = Int8List.fromList(sourceBytes);
     final reader = StructReader(bytes.buffer)..skip(1);
     final authority = base58encode(reader.nextBytes(32));
-    final state = CashLinkStateExtension.fromId(reader.nextBytes(1).first);
+    final state = CashStateExtension.fromId(reader.nextBytes(1).first);
     final amount = decodeBigInt(reader.nextBytes(8), Endian.little);
     final feeBps = decodeBigInt(reader.nextBytes(2), Endian.little);
     final fixedFee = decodeBigInt(reader.nextBytes(8), Endian.little);
@@ -53,16 +53,19 @@ class CashLink {
     final remainingAmount = decodeBigInt(reader.nextBytes(8), Endian.little);
     final distributionType =
         CashLinkDistributionTypeExtension.fromId(reader.nextBytes(1).first);
-    final sender = base58encode(reader.nextBytes(32));
-    final expiresAt = reader.nextBytes(1).first == 1
-        ? decodeBigInt(reader.nextBytes(8), Endian.little)
-        : null;
+    final owner = base58encode(reader.nextBytes(32));
     final mint = base58encode(reader.nextBytes(32));
 
     final totalRedemptions = decodeBigInt(reader.nextBytes(2), Endian.little);
     final maxNumRedemptions = decodeBigInt(reader.nextBytes(2), Endian.little);
-    return CashLink(
-      key: AccountKey.cashLink,
+    final minAmount = decodeBigInt(reader.nextBytes(8), Endian.little);
+    final fingerprintEnabled = reader.nextBytes(1).first == 1;
+    final passKey = reader.nextBytes(1).first == 1
+        ? base58encode(reader.nextBytes(32))
+        : null;
+    final totalWeightPpm = decodeBigInt(reader.nextBytes(4), Endian.little);
+    return Cash(
+      key: AccountKey.cash,
       authority: authority,
       state: state,
       amount: amount,
@@ -72,17 +75,14 @@ class CashLink {
       rentFeeToRedeem: rentFeeToRedeem,
       remainingAmount: remainingAmount,
       distributionType: distributionType,
-      sender: sender,
-      expiresAt: expiresAt != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              (expiresAt * BigInt.from(1000)).toInt())
-          : null,
+      owner: owner,
       mint: mint,
       totalRedemptions: totalRedemptions,
       maxNumRedemptions: maxNumRedemptions,
-      minAmount: decodeBigInt(reader.nextBytes(8), Endian.little),
-      fingerprintEnabled: reader.nextBytes(1).first == 1,
-      passKey: base58encode(reader.nextBytes(32)),
+      minAmount: minAmount,
+      fingerprintEnabled: fingerprintEnabled,
+      passKey: passKey,
+      totalWeightPpm: totalWeightPpm,
     );
   }
 
@@ -90,8 +90,8 @@ class CashLink {
 
   final AccountKey key;
   final String authority;
-  final String passKey;
-  final CashLinkState state;
+  final String? passKey;
+  final CashState state;
   final BigInt amount;
   final BigInt feeBps;
   final BigInt fixedFee;
@@ -99,35 +99,27 @@ class CashLink {
   final BigInt rentFeeToRedeem;
   final BigInt remainingAmount;
   final CashLinkDistributionType distributionType;
-  final String sender;
-  final DateTime? expiresAt;
+  final String owner;
   final String mint;
   final BigInt totalRedemptions;
   final BigInt maxNumRedemptions;
   final BigInt minAmount;
+  final BigInt totalWeightPpm;
   final bool fingerprintEnabled;
-
-  static Future<Ed25519HDPublicKey> pda(Ed25519HDPublicKey passKey) {
-    final programID = Ed25519HDPublicKey.fromBase58(CashLinkProgram.programId);
-    return Ed25519HDPublicKey.findProgramAddress(seeds: [
-      CashLink.prefix.codeUnits,
-      passKey.bytes,
-    ], programId: programID);
-  }
 }
 
 extension CashLinkExtension on RpcClient {
-  Future<CashLinkAccount?> getCashLinkAccountByReference(
-      {required Ed25519HDPublicKey passKey,
+  Future<CashAccount?> cashAccount(
+      {required String reference,
       Commitment commitment = Commitment.finalized}) async {
-    final programAddress = await CashLink.pda(passKey);
-    return getCashLinkAccount(
+    final programAddress = await CashProgram.cashAccount(reference);
+    return getCashAccount(
       address: programAddress,
       commitment: commitment,
     );
   }
 
-  Future<CashLinkAccount?> getCashLinkAccount(
+  Future<CashAccount?> getCashAccount(
       {required Ed25519HDPublicKey address,
       Commitment commitment = Commitment.finalized}) async {
     final result = await getAccountInfo(
@@ -142,22 +134,22 @@ extension CashLinkExtension on RpcClient {
     final data = result.value!.data;
 
     if (data is dto.BinaryAccountData) {
-      return CashLinkAccount(
+      return CashAccount(
         address: address.toBase58(),
-        cashLink: CashLink.fromBinary(data.data),
+        cash: Cash.fromBinary(data.data),
       );
     } else {
       return null;
     }
   }
 
-  Future<List<CashLinkAccount>> findCashLinks(
-      {CashLinkState? state,
+  Future<List<CashAccount>> findCashAccounts(
+      {CashState? state,
       String? authority,
       Commitment commitment = Commitment.finalized}) async {
     final filters = [
       dto.ProgramDataFilter.memcmp(
-          offset: 0, bytes: ByteArray.u8(AccountKey.cashLink.id).toList()),
+          offset: 0, bytes: ByteArray.u8(AccountKey.cash.id).toList()),
       if (authority != null)
         dto.ProgramDataFilter.memcmpBase58(offset: 1, bytes: authority),
       if (state != null)
@@ -165,24 +157,23 @@ extension CashLinkExtension on RpcClient {
             offset: 33, bytes: ByteArray.u8(state.id).toList()),
     ];
     final accounts = await getProgramAccounts(
-      CashLinkProgram.programId,
+      CashProgram.programId,
       encoding: dto.Encoding.base64,
       filters: filters,
       commitment: commitment,
     );
     return accounts
         .map(
-          (acc) => CashLinkAccount(
+          (acc) => CashAccount(
             address: acc.pubkey,
-            cashLink: CashLink.fromBinary(
+            cash: Cash.fromBinary(
                 (acc.account.data as dto.BinaryAccountData).data),
           ),
         )
         .toList();
   }
 
-  Future<List<CashLinkAccount>> findCashLinkByAuthority(
-      String authority) async {
-    return findCashLinks(authority: authority);
+  Future<List<CashAccount>> findCashAccountByAuthority(String authority) async {
+    return findCashAccounts(authority: authority);
   }
 }
