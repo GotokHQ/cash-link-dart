@@ -98,7 +98,7 @@ class Cash {
   final BigInt baseFeeToRedeem;
   final BigInt rentFeeToRedeem;
   final BigInt remainingAmount;
-  final CashLinkDistributionType distributionType;
+  final CashDistributionType distributionType;
   final String owner;
   final String mint;
   final BigInt totalRedemptions;

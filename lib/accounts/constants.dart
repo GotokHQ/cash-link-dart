@@ -60,28 +60,28 @@ extension CashStateExtension on CashState {
   }
 }
 
-enum CashLinkDistributionType { fixed, random, weighted }
+enum CashDistributionType { fixed, random, weighted }
 
-extension CashLinkDistributionTypeExtension on CashLinkDistributionType {
-  static CashLinkDistributionType fromId(int id) {
+extension CashLinkDistributionTypeExtension on CashDistributionType {
+  static CashDistributionType fromId(int id) {
     switch (id) {
       case 0:
-        return CashLinkDistributionType.fixed;
+        return CashDistributionType.fixed;
       case 1:
-        return CashLinkDistributionType.random;
+        return CashDistributionType.random;
       case 2:
-        return CashLinkDistributionType.weighted;
+        return CashDistributionType.weighted;
     }
     throw StateError('Invalid cash link distribution type');
   }
 
   int get id {
     switch (this) {
-      case CashLinkDistributionType.fixed:
+      case CashDistributionType.fixed:
         return 0;
-      case CashLinkDistributionType.random:
+      case CashDistributionType.random:
         return 1;
-      case CashLinkDistributionType.weighted:
+      case CashDistributionType.weighted:
         return 2;
     }
   }
