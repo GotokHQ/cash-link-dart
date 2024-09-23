@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:cash_link/accounts/constants.dart';
-import 'package:cash_link/cash_program.dart';
-import 'package:cash_link/utils/endian.dart';
-import 'package:cash_link/utils/struct_reader.dart';
+import 'package:cash/accounts/constants.dart';
+import 'package:cash/cash_program.dart';
+import 'package:cash/utils/endian.dart';
+import 'package:cash/utils/struct_reader.dart';
 import 'package:solana/base58.dart';
 import 'package:solana/dto.dart' as dto;
 import 'package:solana/encoder.dart';

@@ -1,4 +1,4 @@
-import 'package:cash_link/accounts/cash.dart';
+import 'package:cash/accounts/cash.dart';
 import 'package:solana/solana.dart';
 
 class CashProgram {
