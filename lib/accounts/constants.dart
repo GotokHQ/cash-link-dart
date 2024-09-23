@@ -25,10 +25,18 @@ extension AccountKeyExtension on AccountKey {
 }
 
 enum CashState {
-  initialized,
-  redeemed,
-  redeeming,
-  canceled,
+  initialized(0),
+  redeemed(1),
+  redeeming(2),
+  canceled(3);
+
+  final int id;
+
+  const CashState(this.id);
+  @override
+  String toString() {
+    return '$id';
+  }
 }
 
 extension CashStateExtension on CashState {
@@ -60,7 +68,19 @@ extension CashStateExtension on CashState {
   }
 }
 
-enum CashDistributionType { fixed, random, weighted }
+enum CashDistributionType {
+  fixed(0),
+  random(1),
+  weighted(2);
+
+  final int id;
+
+  const CashDistributionType(this.id);
+  @override
+  String toString() {
+    return '$id';
+  }
+}
 
 extension CashLinkDistributionTypeExtension on CashDistributionType {
   static CashDistributionType fromId(int id) {
