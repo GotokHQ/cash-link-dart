@@ -143,10 +143,11 @@ extension CashLinkExtension on RpcClient {
     }
   }
 
-  Future<List<CashAccount>> findCashAccounts(
-      {CashState? state,
-      String? authority,
-      Commitment commitment = Commitment.finalized}) async {
+  Future<List<CashAccount>> findCashAccounts({
+    CashState? state,
+    String? authority,
+    Commitment commitment = Commitment.finalized,
+  }) async {
     final filters = [
       dto.ProgramDataFilter.memcmp(
           offset: 0, bytes: ByteArray.u8(AccountKey.cash.id).toList()),
