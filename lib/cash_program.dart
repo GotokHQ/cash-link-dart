@@ -7,6 +7,7 @@ class CashProgram {
   static const walletPrefix = 'wallet';
   static const referralPrefix = 'referral';
   static const ticketPrefix = 'ticket';
+  static const redemptionPrefix = 'redemption';
 
   static Future<Ed25519HDPublicKey> cashAccount(String reference) {
     final programID = Ed25519HDPublicKey.fromBase58(CashProgram.programId);
@@ -16,12 +17,33 @@ class CashProgram {
     ], programId: programID);
   }
 
-  static Future<Ed25519HDPublicKey> accountForPrefix(
-      String prefix, Ed25519HDPublicKey wallet) {
+  static Future<Ed25519HDPublicKey> rewardAccount(Ed25519HDPublicKey wallet) {
     final programID = Ed25519HDPublicKey.fromBase58(CashProgram.programId);
     return Ed25519HDPublicKey.findProgramAddress(
       seeds: [
-        prefix.codeUnits,
+        rewardPrefix.codeUnits,
+        wallet.bytes,
+      ],
+      programId: programID,
+    );
+  }
+
+  static Future<Ed25519HDPublicKey> walletAccount(Ed25519HDPublicKey wallet) {
+    final programID = Ed25519HDPublicKey.fromBase58(CashProgram.programId);
+    return Ed25519HDPublicKey.findProgramAddress(
+      seeds: [
+        walletPrefix.codeUnits,
+        wallet.bytes,
+      ],
+      programId: programID,
+    );
+  }
+
+  static Future<Ed25519HDPublicKey> referralAccount(Ed25519HDPublicKey wallet) {
+    final programID = Ed25519HDPublicKey.fromBase58(CashProgram.programId);
+    return Ed25519HDPublicKey.findProgramAddress(
+      seeds: [
+        referralPrefix.codeUnits,
         wallet.bytes,
       ],
       programId: programID,
@@ -34,6 +56,19 @@ class CashProgram {
     return Ed25519HDPublicKey.findProgramAddress(
       seeds: [
         ticketPrefix.codeUnits,
+        cash.bytes,
+        wallet.bytes,
+      ],
+      programId: programID,
+    );
+  }
+
+  static Future<Ed25519HDPublicKey> redemptionAccount(
+      Ed25519HDPublicKey cash, Ed25519HDPublicKey wallet) {
+    final programID = Ed25519HDPublicKey.fromBase58(CashProgram.programId);
+    return Ed25519HDPublicKey.findProgramAddress(
+      seeds: [
+        redemptionPrefix.codeUnits,
         cash.bytes,
         wallet.bytes,
       ],

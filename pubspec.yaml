@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   collection: ^1.15.0
-  solana: ^0.30.0+1
+  solana: ^0.31.0
 
 
 dev_dependencies:
